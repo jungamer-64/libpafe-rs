@@ -1,0 +1,27 @@
+// libpafe-rs/libpafe/src/protocol/commands/system.rs
+
+use crate::types::Idm;
+
+/// Encode RequestSystemCode command (FeliCa command code 0x0C)
+/// Layout: command_code(1) + idm(8)
+pub fn encode_request_system_code(idm: Idm) -> Vec<u8> {
+    let mut buf = Vec::new();
+    buf.push(0x0C);
+    buf.extend_from_slice(idm.as_bytes());
+    buf
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::Idm;
+
+    #[test]
+    fn encode_request_system_code_basic() {
+        let idm = Idm::from_bytes([1, 1, 1, 1, 1, 1, 1, 1]);
+        let p = encode_request_system_code(idm);
+        let mut expected = vec![0x0C];
+        expected.extend_from_slice(&[1, 1, 1, 1, 1, 1, 1, 1]);
+        assert_eq!(p, expected);
+    }
+}
