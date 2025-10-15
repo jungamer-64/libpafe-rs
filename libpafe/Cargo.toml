@@ -1,0 +1,38 @@
+[package]
+name = "libpafe"
+version = "0.1.0"
+edition = "2024"
+description = "Pure Rust implementation for Sony PaSoRi NFC readers"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rfujita/libpafe"
+readme = "README.md"
+
+[dependencies]
+thiserror = "1.0"
+log = "0.4"
+derive_more = "0.99"
+# rusb を将来使えるようオプション依存にする
+rusb = { version = "0.9", optional = true }
+tokio = { version = "1", features = ["full"], optional = true }
+async-trait = { version = "0.1", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+default = ["std", "s320"]
+std = []
+async = ["tokio", "async-trait"]
+serde = ["dep:serde"]
+diagnostics = []
+s310 = []
+s320 = []
+s330 = []
+all-devices = ["s310", "s320", "s330"]
+usb = ["rusb"]
+
+[dev-dependencies]
+anyhow = "1.0"
+env_logger = "0.11"
+hex = "0.4"
+serial_test = "3.0"
+proptest = "1.0"
+criterion = "0.4"
