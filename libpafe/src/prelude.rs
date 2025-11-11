@@ -6,8 +6,8 @@ pub use crate::device::Device;
 pub use crate::device::{Initialized, Uninitialized};
 pub use crate::protocol::{Command, Response};
 pub use crate::{
-    AccessMode, BlockData, BlockElement, DeviceType, Error, Idm, Pmm, Result, ServiceCode,
-    SystemCode,
+    AccessMode, Atqb, BlockData, BlockElement, CardType, DeviceType, Error, Idm, Pmm, Result,
+    ServiceCode, SystemCode, Uid,
 };
 
 // Re-export small utilities for convenience

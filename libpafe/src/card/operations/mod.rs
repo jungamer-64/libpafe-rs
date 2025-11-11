@@ -6,4 +6,6 @@ pub mod write;
 // can use `crate::card::operations::read_blocks(...)` and receive the
 // iterator type as `crate::card::operations::ServiceIterator`.
 pub use read::{read_blocks, read_single};
-pub use service::ServiceIterator;
+pub use service::{
+    ServiceIterator, request_response_mode, request_service_versions, request_system_codes,
+};

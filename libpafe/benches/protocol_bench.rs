@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use libpafe::protocol::commands::Command;
 use libpafe::protocol::frame::Frame;
 use libpafe::types::{AccessMode, BlockElement, Idm, ServiceCode};

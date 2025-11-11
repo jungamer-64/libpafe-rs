@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use crate::protocol::codec;
 use crate::protocol::{Command, Response};
 use crate::transport::Transport;
-use crate::types::{DeviceType, Idm, Pmm, SystemCode};
+use crate::types::{DeviceType, SystemCode};
 use crate::{Error, Result};
 
 /// Type-state markers
@@ -23,7 +23,7 @@ pub struct Device<State = Uninitialized> {
 impl Device<Uninitialized> {
     /// Create a Device from an existing Transport instance. This is
     /// primarily intended for tests where a MockTransport is provided.
-    pub fn new_with_transport(mut transport: Box<dyn Transport>) -> Result<Self> {
+    pub fn new_with_transport(transport: Box<dyn Transport>) -> Result<Self> {
         let device_type = transport.device_type()?;
         let model = crate::device::models::create_model_for(device_type);
         Ok(Self {
@@ -68,7 +68,7 @@ impl Device<Initialized> {
         let payload = cmd.encode();
         let framed = codec::encode_command_frame(&cmd)?;
 
-        // Let the device model wrap the outgoing bytes (PN533 envelopes
+        // Let the device model wrap the outgoing bytes (RCS956 envelopes
         // for S330, vendor-control envelopes for others, etc.).
         // Use the cached model instance to wrap/unwrap model-specific
         // transport payloads.
@@ -78,15 +78,52 @@ impl Device<Initialized> {
 
         let raw_resp = self.transport.receive(timeout_ms)?;
 
+        // Allow an S330/RCS956-style exchange to complete: many PN53x
+        // devices return an immediate ACK (00 00 FF 00 FF 00) followed
+        // by the actual response payload. If we detect an ACK-only read
+        // and this is an S330 device, perform a second receive and
+        // append the bytes so model-specific unwrapping can locate the
+        // inner FeliCa frame.
+        let mut raw = raw_resp;
+        let pn532_ack = [0x00u8, 0x00u8, 0xFFu8, 0x00u8, 0xFFu8, 0x00u8];
+        if self.device_type == crate::types::DeviceType::S330
+            && raw.starts_with(&pn532_ack)
+            && raw.len() == pn532_ack.len()
+        {
+            // ACK-only read: attempt to read the real response (best-effort)
+            if let Ok(mut follow) = self.transport.receive(timeout_ms) {
+                raw.append(&mut follow);
+            }
+        }
+
         // Allow the model to extract the inner FeliCa frame or payload
         // from a device-specific response format.
-        let inner = self.model.unwrap_response(cmd.command_code(), &raw_resp)?;
+        let inner = self.model.unwrap_response(cmd.command_code(), &raw)?;
 
-        let response = codec::decode_response_frame(cmd.command_code(), &inner)?;
-        Ok(response)
+        // Try the normal decode path first. If decoding fails on
+        // S330/PN533 devices, attempt a more permissive extraction of
+        // candidate FeliCa frames (handles ACKs, concatenated reads,
+        // and other vendor-specific wrappers) and decode each until
+        // one succeeds.
+        match codec::decode_response_frame(cmd.command_code(), &inner) {
+            Ok(r) => Ok(r),
+            Err(e) => {
+                if self.device_type == crate::types::DeviceType::S330 {
+                    let candidates = self
+                        .model
+                        .extract_candidate_frames(&raw, cmd.command_code());
+                    for frame in candidates {
+                        if let Ok(r2) = codec::decode_response_frame(cmd.command_code(), &frame) {
+                            return Ok(r2);
+                        }
+                    }
+                }
+                Err(e)
+            }
+        }
     }
 
-    /// High-level polling convenience method.
+    /// High-level polling convenience method (FeliCa/Type F only).
     pub fn polling(&mut self, system_code: SystemCode) -> Result<crate::card::Card> {
         let cmd = Command::Polling {
             system_code,
@@ -108,15 +145,23 @@ impl Device<Initialized> {
     /// Model-specific multi-target polling (if supported by the device
     /// model). This delegates to the DeviceModel implementation which may
     /// perform vendor_control transfers and extract multiple embedded
-    /// FeliCa frames.
+    /// card responses.
+    ///
+    /// For FeliCa (Type F), system_code is used. For Type A/B, it's ignored.
     pub fn list_passive_targets(
         &mut self,
+        card_type: crate::types::CardType,
         system_code: SystemCode,
         max_targets: u8,
         timeout_ms: u64,
     ) -> Result<Vec<crate::card::Card>> {
-        self.model
-            .list_passive_targets(&mut *self.transport, system_code, max_targets, timeout_ms)
+        self.model.list_passive_targets(
+            &mut *self.transport,
+            card_type,
+            system_code,
+            max_targets,
+            timeout_ms,
+        )
     }
 
     /// Accessor for device type
@@ -156,9 +201,12 @@ mod tests {
         let mut dev = device.initialize().unwrap();
 
         let card = dev.polling(crate::types::SystemCode::new(0x0a0b)).unwrap();
-        assert_eq!(card.idm().as_bytes(), &[1, 2, 3, 4, 5, 6, 7, 8]);
-        assert_eq!(card.pmm().as_bytes(), &[9, 10, 11, 12, 13, 14, 15, 16]);
-        assert_eq!(card.system_code().as_u16(), 0x0a0b);
+        assert_eq!(card.idm().unwrap().as_bytes(), &[1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(
+            card.pmm().unwrap().as_bytes(),
+            &[9, 10, 11, 12, 13, 14, 15, 16]
+        );
+        assert_eq!(card.system_code().unwrap().as_u16(), 0x0a0b);
     }
 
     #[test]
@@ -252,9 +300,12 @@ mod tests {
         let mut dev = device.initialize().unwrap();
 
         let card = dev.polling(SystemCode::new(0x0a0b)).unwrap();
-        assert_eq!(card.idm().as_bytes(), &[1, 2, 3, 4, 5, 6, 7, 8]);
-        assert_eq!(card.pmm().as_bytes(), &[9, 10, 11, 12, 13, 14, 15, 16]);
-        assert_eq!(card.system_code().as_u16(), 0x0a0b);
+        assert_eq!(card.idm().unwrap().as_bytes(), &[1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(
+            card.pmm().unwrap().as_bytes(),
+            &[9, 10, 11, 12, 13, 14, 15, 16]
+        );
+        assert_eq!(card.system_code().unwrap().as_u16(), 0x0a0b);
     }
 
     #[test]
@@ -287,10 +338,21 @@ mod tests {
         let mut dev = device.initialize().unwrap();
 
         let cards = dev
-            .list_passive_targets(SystemCode::new(0x0a0b), 2, 1000)
+            .list_passive_targets(
+                crate::types::CardType::TypeF,
+                SystemCode::new(0x0a0b),
+                2,
+                1000,
+            )
             .unwrap();
         assert_eq!(cards.len(), 2);
-        assert_eq!(cards[0].idm().as_bytes(), &[1, 2, 3, 4, 5, 6, 7, 8]);
-        assert_eq!(cards[1].idm().as_bytes(), &[21, 22, 23, 24, 25, 26, 27, 28]);
+        assert_eq!(
+            cards[0].idm().unwrap().as_bytes(),
+            &[1, 2, 3, 4, 5, 6, 7, 8]
+        );
+        assert_eq!(
+            cards[1].idm().unwrap().as_bytes(),
+            &[21, 22, 23, 24, 25, 26, 27, 28]
+        );
     }
 }

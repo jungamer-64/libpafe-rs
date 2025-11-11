@@ -1,8 +1,7 @@
 // libpafe-rs/src/device/models/mod.rs
 
-use crate::types::DeviceType;
-use crate::Error;
 use crate::Result;
+use crate::types::DeviceType;
 
 pub trait DeviceModel {
     /// Initialize the device via the provided transport. Implementations may
@@ -35,14 +34,26 @@ pub trait DeviceModel {
     /// InListPassiveTarget operation that can return multiple targets in a
     /// single response. The default implementation returns an error to
     /// indicate the operation is not supported by the model.
+    ///
+    /// For FeliCa (Type F), system_code is used. For Type A/B, it's ignored.
     fn list_passive_targets(
         &self,
         _transport: &mut dyn crate::transport::Transport,
+        _card_type: crate::types::CardType,
         _system_code: crate::types::SystemCode,
         _max_targets: u8,
         _timeout_ms: u64,
     ) -> Result<Vec<crate::card::Card>> {
         Err(crate::Error::PollingFailed)
+    }
+
+    /// Model-specific helper: extract candidate FeliCa wire frames from a
+    /// raw device response buffer. Default implementation returns an
+    /// empty list which signals no model-specific candidates are
+    /// available. Device implementations (e.g. S330) may override this
+    /// to provide richer extraction heuristics.
+    fn extract_candidate_frames(&self, _raw: &[u8], _expected_cmd: u8) -> Vec<Vec<u8>> {
+        Vec::new()
     }
 }
 

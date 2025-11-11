@@ -16,6 +16,7 @@ pub fn dcs(payload: &[u8]) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     #[test]
     fn lcs_examples() {
@@ -28,5 +29,14 @@ mod tests {
     fn dcs_examples() {
         assert_eq!(dcs(&[0x01, 0x02, 0x03]), 0xfa);
         assert_eq!(dcs(&[]), 0x00);
+    }
+
+    proptest! {
+        #[test]
+        fn dcs_mathematical_property(bytes in prop::collection::vec(any::<u8>(), 0..256)) {
+            let sum = bytes.iter().fold(0u8, |a, &b| a.wrapping_add(b));
+            let d = dcs(&bytes);
+            prop_assert_eq!(d.wrapping_add(sum), 0u8);
+        }
     }
 }

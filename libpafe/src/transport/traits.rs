@@ -1,7 +1,7 @@
 // libpafe-rs/libpafe/src/transport/traits.rs
 
+use crate::Result;
 use crate::types::DeviceType;
-use crate::{Error, Result};
 
 /// Transport trait abstracts I/O away from protocol/device logic.
 pub trait Transport {
@@ -53,6 +53,25 @@ pub trait Transport {
         timeout_ms: u64,
     ) -> Result<Vec<u8>> {
         self.control_read(timeout_ms)
+    }
+
+    /// Optional: return the configured IN endpoint address for transports
+    /// that expose explicit endpoints (e.g. USB). Default is `None`.
+    fn in_endpoint(&self) -> Option<u8> {
+        None
+    }
+
+    /// Optional: return the configured OUT endpoint address for transports
+    /// that expose explicit endpoints (e.g. USB). Default is `None`.
+    fn out_endpoint(&self) -> Option<u8> {
+        None
+    }
+
+    /// Optional: attempt to clear a stalled endpoint (bulk/interrupt).
+    /// Default implementation is a no-op to preserve compatibility with
+    /// transports that do not support explicit endpoint control.
+    fn clear_halt(&mut self, _endpoint: u8) -> Result<()> {
+        Ok(())
     }
 }
 

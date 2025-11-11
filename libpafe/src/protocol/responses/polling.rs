@@ -1,8 +1,8 @@
 // libpafe-rs/libpafe/src/protocol/responses/polling.rs
 
+use crate::Result;
 use crate::protocol::parser;
 use crate::types::{Idm, Pmm, SystemCode};
-use crate::{Error, Result};
 
 /// Decode a Polling response payload (response code = 0x01)
 /// Layout: response_code(1) + idm(8) + pmm(8) + system_code(2)

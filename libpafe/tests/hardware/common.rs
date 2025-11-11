@@ -7,7 +7,7 @@
 //! open/initialize して、デバイスが無い環境（CI 等）では `Ok(None)` を返すことです。
 
 use libpafe::transport::usb::UsbTransport;
-use libpafe::{device, transport, Error, Result};
+use libpafe::{Error, Result, device, transport};
 
 /// PaSoRi を開いて初期化した `Device<Initialized>` を返す。
 ///

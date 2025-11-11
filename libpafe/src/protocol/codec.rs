@@ -1,10 +1,10 @@
 // libpafe-rs/libpafe/src/protocol/codec.rs
 
-use crate::{Error, Result};
+use crate::Result;
 
+use super::Frame;
 use super::commands::Command;
 use super::responses::Response;
-use super::Frame;
 
 /// Encode a Command into a full wire frame (with preamble/LCS/DCS/postamble).
 pub fn encode_command_frame(cmd: &Command) -> Result<Vec<u8>> {

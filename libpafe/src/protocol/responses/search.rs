@@ -1,6 +1,6 @@
 // libpafe-rs/libpafe/src/protocol/responses/search.rs
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::protocol::parser;
 use crate::types::Idm;
 

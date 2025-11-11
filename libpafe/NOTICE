@@ -1,0 +1,20 @@
+# libpafe-rs — Pure Rust FeliCa / PaSoRi implementation
+
+Copyright (c) 2025 [jungamer-64]
+
+This software is an independent, clean-room implementation of the
+`FeliCa` contactless smart card protocol for Sony PaSoRi NFC readers.
+It is NOT derived from the GPL-licensed `libpafe` C library.
+
+Implementation sources and references:
+
+- Sony FeliCa Technical Specification (publicly available)
+- NXP PN532 / PN533 User Manual / Datasheet (publicly available)
+- Observations of device behaviour and public vendor documentation
+
+This crate is dual-licensed under `MIT OR Apache-2.0`. See the project's
+`Cargo.toml` and `README.md` for license details and attribution.
+
+If you are preparing this code for commercial distribution, consider
+consulting an intellectual property attorney to validate license
+compliance for your use case.

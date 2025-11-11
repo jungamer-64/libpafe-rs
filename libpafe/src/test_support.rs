@@ -4,7 +4,7 @@
 //! crate and tests/ directory can reuse the same logic.
 #![allow(dead_code)]
 
-use crate::{device, transport, types, Result};
+use crate::{Result, device, transport, types};
 
 /// Build a MockTransport pre-seeded with the given framed responses and
 /// return it boxed as a Transport trait object.

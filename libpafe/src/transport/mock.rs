@@ -113,6 +113,19 @@ impl Transport for MockTransport {
         self.vendor_reads.push((request, value, index));
         self.receive(timeout_ms)
     }
+
+    fn in_endpoint(&self) -> Option<u8> {
+        None
+    }
+
+    fn out_endpoint(&self) -> Option<u8> {
+        None
+    }
+
+    fn clear_halt(&mut self, _endpoint: u8) -> Result<()> {
+        // No-op for mock transport
+        Ok(())
+    }
 }
 
 #[cfg(test)]

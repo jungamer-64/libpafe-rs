@@ -15,7 +15,9 @@ pub fn write_single(
     data: BlockData,
 ) -> Result<()> {
     let cmd = Command::WriteWithoutEncryption {
-        idm: card.idm,
+        idm: *card
+            .idm()
+            .ok_or_else(|| Error::UnsupportedOperation("Card does not have IDm".into()))?,
         service,
         block,
         data,
@@ -60,7 +62,9 @@ pub fn write_blocks(
     let data_blocks: Vec<_> = blocks.iter().map(|(_, d)| *d).collect();
 
     let cmd = crate::protocol::commands::Command::WriteWithoutEncryptionMulti {
-        idm: card.idm,
+        idm: *card
+            .idm()
+            .ok_or_else(|| Error::UnsupportedOperation("Card does not have IDm".into()))?,
         services,
         blocks: block_elems,
         data: data_blocks,

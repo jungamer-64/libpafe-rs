@@ -117,6 +117,21 @@ impl Response {
             }
         }
     }
+
+    /// Return the response code byte associated with this response variant.
+    /// This is useful when surfacing `UnexpectedResponse` errors at higher
+    /// layers without needing to re-decode the raw payload.
+    pub fn response_code(&self) -> u8 {
+        match self {
+            Response::Polling { .. } => 0x01,
+            Response::ReadWithoutEncryption { .. } => 0x07,
+            Response::WriteWithoutEncryption { .. } => 0x09,
+            Response::RequestService { .. } => 0x03,
+            Response::RequestResponse { .. } => 0x05,
+            Response::RequestSystemCode { .. } => 0x0D,
+            Response::SearchServiceCode { .. } => 0x0B,
+        }
+    }
 }
 
 #[cfg(test)]

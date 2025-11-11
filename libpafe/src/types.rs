@@ -271,3 +271,76 @@ mod tests {
         assert_eq!(idm.to_hex(), "deadbeef00112233");
     }
 }
+
+/// Card type enumeration for NFC technology types
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CardType {
+    /// FeliCa / Type F (ISO/IEC 18092)
+    TypeF,
+    /// Type A (ISO/IEC 14443-3A)
+    TypeA,
+    /// Type B (ISO/IEC 14443-3B)
+    TypeB,
+}
+
+/// UID for Type A/B cards (variable length, typically 4/7/10 bytes)
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Uid(Vec<u8>);
+
+impl Uid {
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        Self(bytes)
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+
+    pub fn to_hex(&self) -> String {
+        crate::utils::bytes_to_hex(self.as_bytes())
+    }
+}
+
+impl TryFrom<&[u8]> for Uid {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.is_empty() || bytes.len() > 10 {
+            return Err(Error::InvalidLength {
+                expected: 4, // typical length
+                actual: bytes.len(),
+            });
+        }
+        Ok(Self(bytes.to_vec()))
+    }
+}
+
+/// ATQB (Answer To reQuest type B) - 12 bytes for Type B cards
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Atqb([u8; 12]);
+
+impl Atqb {
+    pub fn from_bytes(bytes: [u8; 12]) -> Self {
+        Self(bytes)
+    }
+
+    pub fn as_bytes(&self) -> &[u8; 12] {
+        &self.0
+    }
+}
+
+impl TryFrom<&[u8]> for Atqb {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if bytes.len() != 12 {
+            return Err(Error::InvalidLength {
+                expected: 12,
+                actual: bytes.len(),
+            });
+        }
+        let mut arr = [0u8; 12];
+        arr.copy_from_slice(&bytes[..12]);
+        Ok(Self(arr))
+    }
+}

@@ -32,6 +32,14 @@ impl CardInfo {
 
 impl From<&crate::card::Card> for CardInfo {
     fn from(card: &crate::card::Card) -> Self {
-        CardInfo::new(card.idm, card.pmm, card.system_code)
+        // CardInfo only supports FeliCa (Type F) cards
+        match card {
+            crate::card::Card::TypeF {
+                idm,
+                pmm,
+                system_code,
+            } => CardInfo::new(*idm, *pmm, *system_code),
+            _ => panic!("CardInfo can only be created from Type F (FeliCa) cards"),
+        }
     }
 }

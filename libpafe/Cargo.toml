@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Pure Rust implementation for Sony PaSoRi NFC readers"
 license = "MIT OR Apache-2.0"
+license-file = "NOTICE"
 repository = "https://github.com/rfujita/libpafe"
 readme = "README.md"
 

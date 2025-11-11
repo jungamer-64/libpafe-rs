@@ -1,7 +1,6 @@
 // libpafe-rs/libpafe/src/protocol/commands/polling.rs
 
 use crate::types::SystemCode;
-use crate::{Error, Result};
 
 /// Encode Polling command payload (FeliCa command code 0x00)
 pub fn encode_polling(system_code: SystemCode, request_code: u8, time_slot: u8) -> Vec<u8> {

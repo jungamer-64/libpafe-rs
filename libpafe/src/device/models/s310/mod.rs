@@ -54,10 +54,9 @@ impl crate::device::models::DeviceModel for S310Model {
 mod tests {
     use super::*;
     use crate::device::models::DeviceModel;
+    use crate::test_support as common;
     use crate::transport::mock::MockTransport;
     use crate::types::DeviceType;
-    #[path = "../../../../tests/common/mod.rs"]
-    mod common;
 
     #[test]
     fn s310_model_init_sends_and_receives() {

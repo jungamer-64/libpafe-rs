@@ -42,6 +42,9 @@ pub enum Error {
 
     #[error("operation timed out")]
     Timeout,
+
+    #[error("unsupported operation: {0}")]
+    UnsupportedOperation(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

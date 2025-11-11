@@ -10,8 +10,12 @@ pub fn read_blocks(
     services: &[ServiceCode],
     blocks: &[BlockElement],
 ) -> Result<Vec<BlockData>> {
+    let idm = card.idm().ok_or_else(|| {
+        Error::UnsupportedOperation("Card does not have IDm (not a FeliCa card)".into())
+    })?;
+
     let cmd = Command::ReadWithoutEncryption {
-        idm: card.idm,
+        idm: *idm,
         services: services.to_vec(),
         blocks: blocks.to_vec(),
     };

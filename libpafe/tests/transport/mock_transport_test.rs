@@ -1,8 +1,8 @@
 #[path = "../common/mod.rs"]
 mod common;
 
-use libpafe::transport::mock::MockTransport;
 use libpafe::transport::Transport;
+use libpafe::transport::mock::MockTransport;
 use libpafe::types::DeviceType;
 
 #[test]
